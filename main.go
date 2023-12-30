@@ -126,4 +126,42 @@ func importItemsFromCSV(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Update
+	// Update Redis data store with imported items
+	ctx := context.Background()
+	updateRedisDataStore(ctx, items, redisClient)
+
+	// Respond with a success message
+	w.Write([]byte("Import successful"))
+}
+
+func editItem(w http.ResponseWriter, r *http.Request) {
+	var editedItem Item
+	err := json.NewDecoder(r.Body).Decode(&editedItem)
+	if err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Update Redis data store with the edited item
+	ctx := context.Background()
+	key := fmt.Sprintf("%s:%s", editedItem.Type, editedItem.ID)
+	err = redisClient.HSet(ctx, key, "Data", editedItem.Data).Err()
+	if err != nil {
+		http.Error(w, "Error updating Redis data store", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with a success message
+	w.Write([]byte("Edit successful"))
+}
+
+func main() {
+	router := mux.NewRouter()
+	router.HandleFunc("/ws", handleWebSocket)
+	router.HandleFunc("/export", exportItemsToCSV).Methods("GET")
+	router.HandleFunc("/import", importItemsFromCSV).Methods("POST")
+	router.HandleFunc("/edit", editItem).Methods("POST")
+
+	fmt.Println("Server is running on :8080")
+	log.Fatal(http.ListenAndServe(":8080", router))
+}
