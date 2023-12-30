@@ -30,6 +30,29 @@
       <input v-model="editedItems[index].Data" placeholder="Edit Data" />
       <button @click="saveItem(index)">Save</button>
     </div>
+
+    <!-- Search Form -->
+    <form @submit.prevent="searchItems">
+      <label for="searchQuery">Search Query:</label>
+      <input type="text" id="searchQuery" v-model="searchQuery" />
+
+      <label>Search Filter:</label>
+      <label><input type="radio" v-model="searchFilter" value="ID"> ID</label>
+      <label><input type="radio" v-model="searchFilter" value="Type"> Type</label>
+      <label><input type="radio" v-model="searchFilter" value="Data"> Data</label>
+
+      <button type="submit">Search</button>
+    </form>
+
+    <!-- Display Search Results -->
+    <div v-if="searchResults.length > 0">
+      <h2>Search Results:</h2>
+      <div v-for="(result, index) in searchResults" :key="index" class="item">
+        <p>ID: {{ result.ID }}</p>
+        <p>Type: {{ result.Type }}</p>
+        <p>Data: {{ result.Data }}</p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -40,7 +63,10 @@
         message: 'Waiting for updates...',
         file: null,
         items: [],
-        editedItems: [], // Holds edited data temporarily
+        editedItems: [],
+        searchQuery: '',
+        searchFilter: 'ID',
+        searchResults: [],
       },
       methods: {
         // Existing methods...
@@ -70,6 +96,19 @@
               this.message = 'Failed to edit item.';
             }
           });
+        },
+      },
+      // Search functionality
+        searchItems() {
+          // Send a request to the server to perform the search
+          fetch(`/search?query=${encodeURIComponent(this.searchQuery)}&filter=${this.searchFilter}`)
+            .then(response => response.json())
+            .then(data => {
+              this.searchResults = data;
+            })
+            .catch(error => {
+              console.error('Error searching items:', error);
+            });
         },
       },
     });
