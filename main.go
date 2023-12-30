@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -43,65 +44,26 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
-		// Retrieve data from Redis (replace with your actual data retrieval logic)
+		// Retrieve data from Google Workspace Admin API
 		ctx := context.Background()
-
-		var items []Item
-
-		deviceKeys, err := redisClient.Keys(ctx, "Device:*").Result()
+		data, err := getDataFromAdminAPI(ctx)
 		if err != nil {
-			log.Println("Error retrieving device data from Redis:", err)
+			log.Println("Error retrieving data from Google Workspace Admin API:", err)
 			return
-		}
-
-		for _, key := range deviceKeys {
-			data, err := redisClient.HGet(ctx, key, "Location").Result()
-			if err != nil {
-				log.Println("Error getting device location:", err)
-				continue
-			}
-			items = append(items, Item{ID: key, Type: "Device", Data: data})
-		}
-
-		studentKeys, err := redisClient.Keys(ctx, "Student:*").Result()
-		if err != nil {
-			log.Println("Error retrieving student data from Redis:", err)
-			return
-		}
-
-		for _, key := range studentKeys {
-			data, err := redisClient.HGet(ctx, key, "Name").Result()
-			if err != nil {
-				log.Println("Error getting student name:", err)
-				continue
-			}
-			items = append(items, Item{ID: key, Type: "Student", Data: data})
-		}
-
-		classKeys, err := redisClient.Keys(ctx, "Class:*").Result()
-		if err != nil {
-			log.Println("Error retrieving class data from Redis:", err)
-			return
-		}
-
-		for _, key := range classKeys {
-			data, err := redisClient.HGet(ctx, key, "Teacher").Result()
-			if err != nil {
-				log.Println("Error getting class teacher:", err)
-				continue
-			}
-			items = append(items, Item{ID: key, Type: "Class", Data: data})
 		}
 
 		// Send data to the client
-		err = conn.WriteJSON(items)
+		err = conn.WriteJSON(data)
 		if err != nil {
 			log.Println("Error sending message to client:", err)
 			return
 		}
 
+		// Update Redis data store with relevant key-value pairs
+		updateRedisDataStore(ctx, data, redisClient)
+
 		// Wait for the next update
-		time.Sleep(5 * time.Second)
+		time.Sleep(5 * time.Minute)
 	}
 }
 
