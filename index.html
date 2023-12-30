@@ -11,6 +11,16 @@
 <body>
   <div id="app">
     <h1>{{ message }}</h1>
+
+    <!-- Export and Import Form -->
+    <form @submit.prevent="exportItems">
+      <button type="submit">Export Items to CSV</button>
+    </form>
+    
+    <form @submit.prevent="importItems">
+      <input type="file" accept=".csv" @change="handleFileChange" required />
+      <button type="submit">Import Items from CSV</button>
+    </form>
   </div>
 
   <script>
@@ -18,22 +28,44 @@
     new Vue({
       el: '#app',
       data: {
-        message: 'Waiting for updates...'
+        message: 'Waiting for updates...',
+        file: null,
       },
-      created() {
-        // WebSocket connection
-        const socket = new WebSocket('ws://localhost:8080/ws');
+      methods: {
+        exportItems() {
+          // Send a request to the server to trigger export
+          fetch('/export').then(response => {
+            if (response.ok) {
+              this.message = 'Export successful!';
+            } else {
+              this.message = 'Export failed.';
+            }
+          });
+        },
+        importItems() {
+          if (this.file) {
+            // Send a request to the server to trigger import
+            const formData = new FormData();
+            formData.append('file', this.file);
 
-        // Handle messages from the server
-        socket.addEventListener('message', (event) => {
-          this.message = event.data;
-        });
-
-        // Handle WebSocket errors
-        socket.addEventListener('error', (event) => {
-          console.error('WebSocket error:', event);
-        });
-      }
+            fetch('/import', {
+              method: 'POST',
+              body: formData,
+            }).then(response => {
+              if (response.ok) {
+                this.message = 'Import successful!';
+              } else {
+                this.message = 'Import failed.';
+              }
+            });
+          } else {
+            this.message = 'Please select a CSV file.';
+          }
+        },
+        handleFileChange(event) {
+          this.file = event.target.files[0];
+        },
+      },
     });
   </script>
 </body>
