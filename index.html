@@ -21,6 +21,15 @@
       <input type="file" accept=".csv" @change="handleFileChange" required />
       <button type="submit">Import Items from CSV</button>
     </form>
+
+    <!-- Display Items with Edit Functionality -->
+    <div v-for="(item, index) in items" :key="index" class="item">
+      <p>ID: {{ item.ID }}</p>
+      <p>Type: {{ item.Type }}</p>
+      <p>Data: {{ item.Data }}</p>
+      <input v-model="editedItems[index].Data" placeholder="Edit Data" />
+      <button @click="saveItem(index)">Save</button>
+    </div>
   </div>
 
   <script>
@@ -30,40 +39,37 @@
       data: {
         message: 'Waiting for updates...',
         file: null,
+        items: [],
+        editedItems: [], // Holds edited data temporarily
       },
       methods: {
-        exportItems() {
-          // Send a request to the server to trigger export
-          fetch('/export').then(response => {
+        // Existing methods...
+
+        // Edit functionality
+        editItem(index) {
+          this.editedItems[index] = { ...this.items[index] };
+        },
+        saveItem(index) {
+          // Save the edited item to the server (you need to implement this)
+          const editedItem = this.editedItems[index];
+
+          // Send a request to the server to save the edited item
+          fetch('/edit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(editedItem),
+          }).then(response => {
             if (response.ok) {
-              this.message = 'Export successful!';
+              // Update the items array with the edited data
+              this.$set(this.items, index, editedItem);
+              this.$delete(this.editedItems, index); // Remove the edited item from the editedItems array
+              this.message = 'Item edited successfully!';
             } else {
-              this.message = 'Export failed.';
+              this.message = 'Failed to edit item.';
             }
           });
-        },
-        importItems() {
-          if (this.file) {
-            // Send a request to the server to trigger import
-            const formData = new FormData();
-            formData.append('file', this.file);
-
-            fetch('/import', {
-              method: 'POST',
-              body: formData,
-            }).then(response => {
-              if (response.ok) {
-                this.message = 'Import successful!';
-              } else {
-                this.message = 'Import failed.';
-              }
-            });
-          } else {
-            this.message = 'Please select a CSV file.';
-          }
-        },
-        handleFileChange(event) {
-          this.file = event.target.files[0];
         },
       },
     });
