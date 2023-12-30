@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/go-redis/redis/v8"
 	"context"
+	"strings"
 )
 
 var (
@@ -155,12 +156,51 @@ func editItem(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Edit successful"))
 }
 
+func searchItems(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	filter := r.URL.Query().Get("filter")
+
+	// Retrieve items from the Redis data store
+	ctx := context.Background()
+	items, err := getItemsFromRedis(ctx, redisClient)
+	if err != nil {
+		http.Error(w, "Error retrieving items from Redis", http.StatusInternalServerError)
+		return
+	}
+
+	// Perform the search based on the query and filter
+	var results []Item
+	for _, item := range items {
+		var fieldValue string
+		switch strings.ToLower(filter) {
+		case "id":
+			fieldValue = item.ID
+		case "type":
+			fieldValue = item.Type
+		case "data":
+			fieldValue = item.Data
+		default:
+			http.Error(w, "Invalid search filter", http.StatusBadRequest)
+			return
+		}
+
+		if strings.Contains(strings.ToLower(fieldValue), strings.ToLower(query)) {
+			results = append(results, item)
+		}
+	}
+
+	// Respond with the search results
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/ws", handleWebSocket)
 	router.HandleFunc("/export", exportItemsToCSV).Methods("GET")
 	router.HandleFunc("/import", importItemsFromCSV).Methods("POST")
 	router.HandleFunc("/edit", editItem).Methods("POST")
+	router.HandleFunc("/search", searchItems).Methods("GET") // New endpoint for search
 
 	fmt.Println("Server is running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
