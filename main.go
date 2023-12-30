@@ -1,10 +1,14 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -67,10 +71,59 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/ws", handleWebSocket)
+func exportItemsToCSV(w http.ResponseWriter, r *http.Request) {
+	// Retrieve items from the Redis data store
+	ctx := context.Background()
+	items, err := getItemsFromRedis(ctx, redisClient)
+	if err != nil {
+		http.Error(w, "Error retrieving items from Redis", http.StatusInternalServerError)
+		return
+	}
 
-	fmt.Println("Server is running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	// Generate CSV file
+	filePath := "exported_data.csv"
+	err = ExportItemsToCSV(items, filePath)
+	if err != nil {
+		http.Error(w, "Error exporting items to CSV", http.StatusInternalServerError)
+		return
+	}
+
+	// Send the CSV file as a response
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(filePath)))
+	w.Header().Set("Content-Type", "text/csv")
+	http.ServeFile(w, r, filePath)
 }
+
+func importItemsFromCSV(w http.ResponseWriter, r *http.Request) {
+	// Parse the CSV file from the request
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error parsing CSV file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read CSV file
+	reader := csv.NewReader(file)
+	var items []Item
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			http.Error(w, "Error reading CSV file", http.StatusInternalServerError)
+			return
+		}
+
+		// Parse CSV record into an Item
+		if len(record) >= 3 {
+			item := Item{
+				ID:   record[0],
+				Type: record[1],
+				Data: record[2],
+			}
+			items = append(items, item)
+		}
+	}
+
+	// Update
