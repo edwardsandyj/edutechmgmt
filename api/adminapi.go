@@ -1,56 +1,62 @@
 package api
 
 import (
-	"context"
-	"fmt"
-	"log"
+    "context"
+    "fmt"
+    "io/ioutil"
+    "log"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/admin/directory/v1"
+    "golang.org/x/oauth2"
+    "golang.org/x/oauth2/google"
+    "google.golang.org/api/admin/directory/v1"
 )
 
-// Fetches data from the Google Workspace Admin API
-func getDataFromAdminAPI(ctx context.Context) ([]Item, error) {
-	// Configure Google API client
-	config, err := google.JWTConfigFromJSON([]byte("YOUR_SERVICE_ACCOUNT_JSON_KEY"), admin.AdminDirectoryUserReadonlyScope, admin.AdminDirectoryDeviceReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
+func getDataFromAdminAPI(ctx context.Context, serviceAccountJSONPath string) ([]Item, error) {
+    // Read the service account JSON key from the file
+    serviceAccountJSON, err := ioutil.ReadFile(serviceAccountJSONPath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read service account JSON file: %v", err)
+    }
 
-	client := config.Client(ctx)
+    // Configure Google API client with the loaded service account JSON key
+    config, err := google.JWTConfigFromJSON(serviceAccountJSON, admin.AdminDirectoryUserReadonlyScope, admin.AdminDirectoryDeviceReadonlyScope)
+    if err != nil {
+        return nil, fmt.Errorf("failed to configure Google API client: %v", err)
+    }
 
-	// Fetch users
-	users, err := admin.New(client)
-	if err != nil {
-		return nil, err
-	}
+    client := config.Client(ctx)
 
-	usersResult, err := users.Users.List().Domain("yourdomain.com").Do()
-	if err != nil {
-		return nil, err
-	}
+    // Fetch users
+    users, err := admin.New(client)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create admin service client: %v", err)
+    }
 
-	// Fetch devices
-	devices, err := admin.New(client)
-	if err != nil {
-		return nil, err
-	}
+    usersResult, err := users.Users.List().Domain("yourdomain.com").Do()
+    if err != nil {
+        return nil, fmt.Errorf("failed to fetch users: %v", err)
+    }
 
-	devicesResult, err := devices.Chromeosdevices.List().CustomerId("my_customer").Projection("BASIC").Do()
-	if err != nil {
-		return nil, err
-	}
+    // Fetch devices
+    devices, err := admin.New(client)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create admin service client: %v", err)
+    }
 
-	// Transform API results into our data model
-	var data []Item
-	for _, user := range usersResult.Users {
-		data = append(data, Item{ID: user.Id, Type: "User", Data: user.PrimaryEmail})
-	}
+    devicesResult, err := devices.Chromeosdevices.List().CustomerId("my_customer").Projection("BASIC").Do()
+    if err != nil {
+        return nil, fmt.Errorf("failed to fetch devices: %v", err)
+    }
 
-	for _, device := range devicesResult.Chromeosdevices {
-		data = append(data, Item{ID: device.DeviceId, Type: "Device", Data: device.Model})
-	}
+    // Transform API results into our data model
+    var data []Item
+    for _, user := range usersResult.Users {
+        data = append(data, Item{ID: user.Id, Type: "User", Data: user.PrimaryEmail})
+    }
 
-	return data, nil
+    for _, device := range devicesResult.Chromeosdevices {
+        data = append(data, Item{ID: device.DeviceId, Type: "Device", Data: device.Model})
+    }
+
+    return data, nil
 }
