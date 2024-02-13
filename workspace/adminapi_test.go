@@ -21,13 +21,13 @@ func GetDataFromAdminAPIMock(ctx context.Context) ([]Item, error) {
 
 func TestGetDataFromAdminAPI(t *testing.T) {
 	// Replace the original function with the mock implementation for testing
-	getDataFromAdminAPI = getDataFromAdminAPIMock
-	defer func() { getDataFromAdminAPI = getDataFromAdminAPIOriginal }()
+	GetDataFromAdminAPI = GetDataFromAdminAPIMock
+	defer func() { GetDataFromAdminAPI = GetDataFromAdminAPIOriginal }()
 
 	// Call the function to be tested
-	data, err := getDataFromAdminAPI(context.Background())
+	data, err := GetDataFromAdminAPI(context.Background())
 	if err != nil {
-		t.Fatalf("getDataFromAdminAPI failed: %v", err)
+		t.Fatalf("GetDataFromAdminAPI failed: %v", err)
 	}
 
 	// Validate the results
