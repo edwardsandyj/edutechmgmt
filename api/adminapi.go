@@ -11,7 +11,7 @@ import (
     "google.golang.org/api/admin/directory/v1"
 )
 
-func getDataFromAdminAPI(ctx context.Context, serviceAccountJSONPath string) ([]Item, error) {
+func GetDataFromAdminAPI(ctx context.Context, serviceAccountJSONPath string) ([]Item, error) {
     // Read the service account JSON key from the file
     serviceAccountJSON, err := ioutil.ReadFile(serviceAccountJSONPath)
     if err != nil {
