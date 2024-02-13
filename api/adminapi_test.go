@@ -15,7 +15,7 @@ var MockData = []Item{
 }
 
 // getDataFromAdminAPIMock is a mock implementation of getDataFromAdminAPI for testing.
-func getDataFromAdminAPIMock(ctx context.Context) ([]Item, error) {
+func GetDataFromAdminAPIMock(ctx context.Context) ([]Item, error) {
 	return MockData, nil
 }
 
