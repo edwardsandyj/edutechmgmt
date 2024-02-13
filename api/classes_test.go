@@ -1,5 +1,3 @@
-package api
-
 import (
 	"bytes"
 	"context"
