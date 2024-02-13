@@ -1,4 +1,4 @@
-package main_test
+package api
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/EduTechMgmt/main/api"	
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
