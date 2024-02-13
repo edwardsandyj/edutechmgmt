@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"edutechmgmt/api"
+	"edutechmgmt/workspace"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/go-redis/redis/v8"
@@ -47,7 +47,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	for {
 		// Retrieve data from Google Workspace Admin API
 		ctx := context.Background()
-		data, err := api.GetDataFromAdminAPI(ctx) // Access the function from the 'api' package
+		data, err := workspace.GetDataFromAdminAPI(ctx) // Access the function from the 'workspace' package
 		if err != nil {
 			log.Println("Error retrieving data from Google Workspace Admin API:", err)
 			return
