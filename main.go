@@ -1,21 +1,17 @@
 package main
 
 import (
-	"encoding/csv"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
+	"edutechmgmt/api"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/go-redis/redis/v8"
-	"context"
-	"strings"
+	
 )
 
 var (
@@ -51,7 +47,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	for {
 		// Retrieve data from Google Workspace Admin API
 		ctx := context.Background()
-		data, err := getDataFromAdminAPI(ctx)
+		data, err := api.GetDataFromAdminAPI(ctx) // Access the function from the 'api' package
 		if err != nil {
 			log.Println("Error retrieving data from Google Workspace Admin API:", err)
 			return
