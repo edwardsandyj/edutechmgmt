@@ -1,5 +1,3 @@
-package api
-
 // addDevice adds a new device to Redis Hash
 func addDevice(w http.ResponseWriter, r *http.Request) {
 	var device Item
