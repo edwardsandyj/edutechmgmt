@@ -1,5 +1,3 @@
-package api
-
 // addStudent adds a new student to Redis Hash
 func addStudent(w http.ResponseWriter, r *http.Request) {
 	var student Item
