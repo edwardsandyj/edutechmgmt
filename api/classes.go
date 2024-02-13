@@ -1,3 +1,5 @@
+package api
+
 // addClass adds a new class to Redis Hash
 func addClass(w http.ResponseWriter, r *http.Request) {
 	var class Item
