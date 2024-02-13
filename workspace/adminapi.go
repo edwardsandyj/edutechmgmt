@@ -1,4 +1,4 @@
-package api
+package workspace
 
 import (
     "context"
